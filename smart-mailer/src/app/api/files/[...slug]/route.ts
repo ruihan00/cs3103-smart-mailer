@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 
 const transparentPixel =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+/**
+ * @swagger
+ * /api/files/{mailerId}:
+ *   get:
+ *     description: Increments mailerId visit count by 1 and returns a 1x1 pixel transparent image
+ *     parameters:
+ *           - in: path
+ *             name: mailerId
+ *             required: true
+ *             schema:
+ *               type: string
+ *             description: Unique identifier for the mailer
+ *     responses:
+ *       200:
+ *         description: 1x1 pixel transparent image
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> }
