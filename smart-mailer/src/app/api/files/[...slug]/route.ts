@@ -4,7 +4,7 @@ const transparentPixel =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 export async function GET(
   req: NextRequest,
-  { params }: { params: Record<string, string> }
+  { params }: { params: Promise<{ slug: string[] }> }
 ) {
   const imageBuffer = Buffer.from(transparentPixel, "base64");
   const { slug } = await params;
