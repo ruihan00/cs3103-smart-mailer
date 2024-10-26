@@ -11,9 +11,13 @@
   "dependencies": {
     "next": "15.0.1",
     "next-swagger-doc": "^0.4.0",
+    "pg": "^8.13.1",
+    "pg-hstore": "^2.3.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "swagger-ui-react": "^5.17.14"
+    "sequelize": "^6.37.5",
+    "swagger-ui-react": "^5.17.14",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",
