@@ -1,4 +1,4 @@
-import { DataTypes, QueryTypes, Transaction } from "sequelize";
+import { DataTypes, QueryTypes, Transaction, Op } from "sequelize";
 import DatabaseClient from "./databaseClient";
 
 class ClickService {
@@ -89,6 +89,34 @@ class ClickService {
 
   public async getClicks(mailerId: string) {
     return this.ClickModel.count({ where: { mailer_id: mailerId } });
+  }
+
+  public async getClicksByDate(mailerId: string, date: Date) {
+    return this.ClickModel.count({
+      where: {
+        mailer_id: mailerId,
+        clicked_at: {
+          [Op.gte]: date,
+          [Op.lt]: new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate() + 1
+          ),
+        },
+      },
+    });
+  }
+  // Get the number of clicks for a specific mailer in a specific month
+  public async getClicksByMonth(mailerId: string, month: Date) {
+    return this.ClickModel.count({
+      where: {
+        mailer_id: mailerId,
+        clicked_at: {
+          [Op.gte]: month,
+          [Op.lt]: new Date(month.getFullYear(), month.getMonth() + 1, 1),
+        },
+      },
+    });
   }
 }
 

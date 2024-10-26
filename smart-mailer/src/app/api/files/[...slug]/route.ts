@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import ClickService from "@/lib/database/clickService";
+import MailerService from "@/lib/database/mailerService";
+
 const transparentPixel =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 /**
@@ -17,6 +19,10 @@ const transparentPixel =
  *     responses:
  *       200:
  *         description: 1x1 pixel transparent image
+ *       400:
+ *         description: Invalid mailerId
+ *       500:
+ *         description: Internal server error
  */
 export async function GET(
   req: NextRequest,
@@ -26,6 +32,11 @@ export async function GET(
   const { slug } = await params;
   const mailerId = slug[0];
   const clickService = ClickService.getInstance();
+  const mailerService = MailerService.getInstance();
+  const mailer = await mailerService.getMailerById(mailerId);
+  if (!mailer) {
+    return NextResponse.json({ error: "Invalid mailerId" }, { status: 400 });
+  }
   try {
     await clickService.addClick({ mailerId });
   } catch (error) {
