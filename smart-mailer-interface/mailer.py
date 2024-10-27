@@ -9,7 +9,7 @@ from email.mime.text import MIMEText
 from collections import defaultdict
 
 # SMART MAILER IP ADDRESS (replace)
-MAILER_PROGRAM_IP = 'localhost:3001'
+MAILER_PROGRAM_IP = 'localhost:3000'
 # SMTP server configuration (replace with your SMTP server details)
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 465
