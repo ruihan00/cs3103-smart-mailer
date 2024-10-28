@@ -7,9 +7,10 @@ import requests
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from collections import defaultdict
+import random
 
 # SMART MAILER IP ADDRESS (replace)
-MAILER_PROGRAM_IP = 'localhost:3000'
+MAILER_PROGRAM_URL = 'https://nus-smart-mailer.vercel.app'
 # SMTP server configuration (replace with your SMTP server details)
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 465
@@ -32,7 +33,6 @@ def get_mailer_id(mailer_id=None):
         return mailer_id
     else:
         print(f"No existing mailer id given. Generating a new mailer id...")
-        MAILER_PROGRAM_URL = f'http://{MAILER_PROGRAM_IP}'
         url = f'{MAILER_PROGRAM_URL}/api/mailer/create'
         try:
             response = requests.get(url)
@@ -104,8 +104,8 @@ def read_email_content(html_file):
 def prepare_email_body(body_template, recipient, mailer_id):
     body = body_template.replace('#name#', recipient['name'])
     body = body.replace('#department#', recipient['department'])
-    image_url = f'http://{MAILER_PROGRAM_IP}/api/files/{mailer_id}'
-    tracking_img_tag = f'<img src="{image_url}" width="1" height="1" alt="" style="display:none;" /> <a href={image_url}> <img src="https://img.freepik.com/free-vector/maths-realistic-chalkboard-background_23-2148159115.jpg?semt=ais_hybrid"/> </a>'
+    image_url = f'{MAILER_PROGRAM_URL}/api/files/{mailer_id}'
+    tracking_img_tag = f'<img src="{image_url}" width="1" height="1" alt="" style="display:none;" />'
     if '</body>' in body:
         body = body.replace('</body>', tracking_img_tag + '</body>')
     else:
@@ -140,14 +140,14 @@ def main():
     for recipient in filtered_recipients:
         body = prepare_email_body(body_template, recipient, mailer_id)
         success = send_email(SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SMTP_PASSWORD, recipient['email'], subject, body)
-        counts_by_department[recipient['department']] += 1
-        time.sleep(2)  # Introduce delay to reduce spam likelihood
+        counts_by_department[recipient['department']] += success
+        time.sleep(random.randrange(0, 10) * 0.2)  # Introduce delay to reduce spam likelihood
 
     # Print the report
     print('Emails sent:')
     for department, count in counts_by_department.items():
         print(f'Department: {department}, Emails sent: {count}')
-    print(f'You can track the number of recipents who open your email at {MAILER_PROGRAM_IP}/api/clicks?mailerId={mailer_id}')
+    print(f'You can track the number of recipents who open your email at {MAILER_PROGRAM_URL}/api/clicks?mailerId={mailer_id}')
 
 if __name__ == '__main__':
     main()
