@@ -248,6 +248,7 @@ function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Throws an error if recipent data is not valid
 function validateRecipient(recipient: any) {
     if (!recipient.email) {
         throw new Error('Recipient email is missing');
@@ -258,7 +259,7 @@ function validateRecipient(recipient: any) {
     }
 }
 // Function to send the email
-export async function sendMailTo(
+async function sendMailTo(
     senderEmailAddress: string,
     senderEmailPassword: string,
     receiverEmailAddress: string,

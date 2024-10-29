@@ -108,6 +108,11 @@ class EmailLogService {
         }
     }
 
+    /**
+     * Get successful email counts by department for a given mailerId.
+     * @param mailerId The mailer ID to filter emails.
+     * @returns An object where keys are departments and values are counts.
+     */
     public async getSuccessfulEmailCountByDepartment(mailerId: string): Promise<{ [department: string]: number }> {
         try {
             const results = await this.EmailLogModel.findAll({
@@ -130,6 +135,26 @@ class EmailLogService {
             return countsByDepartment;
         } catch (error) {
             console.error('Error fetching email counts by department:', error);
+            throw error;
+        }
+    }
+
+        /**
+     * Get all email logs for a given mailerId, returning only specified fields.
+     * @param mailerId The mailer ID to filter emails.
+     * @returns An array of email log entries with specified fields.
+     */
+    public async getAllLogsByMailerId(mailerId: string): Promise<any[]> {
+        try {
+            const logs = await this.EmailLogModel.findAll({
+                attributes: ['recipient_email', 'recipient_name','recipient_department','success', 'log_message', 'sent_at'],
+                where: { mailer_id: mailerId },
+                order: [['sent_at', 'DESC']],
+                raw: true, // Return plain JavaScript objects
+            });
+            return logs;
+        } catch (error) {
+            console.error('Error fetching all email logs:', error);
             throw error;
         }
     }
