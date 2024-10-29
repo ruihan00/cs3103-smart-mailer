@@ -1,9 +1,10 @@
 import nodemailer from 'nodemailer';
 import MailerService from "@/lib/database/mailerService";
+import EmailLogService from "@/lib/database/emailLogService"; // Import the EmailLogService
 import { NextRequest, NextResponse } from 'next/server';
 import csvParser from 'csv-parser';
 import { Readable } from 'stream';
-
+import validator from 'validator'; // Import the validator library
 /**
  * @swagger
  * /api/sender/batch:
@@ -26,11 +27,11 @@ import { Readable } from 'stream';
  *               senderEmailAddress:
  *                 type: string
  *                 description: The email address of the sender.
- *                 example: "your-email@example.com"
+ *                 example: "smart.mailer.tester00@gmail.com"
  *               senderEmailPassword:
  *                 type: string
  *                 description: The password of the sender's email address.
- *                 example: "your-email-password"
+ *                 example: "dhoptubmthmtmgnn"
  *               receiverDetailsCSV:
  *                 type: string
  *                 format: binary
@@ -54,7 +55,7 @@ import { Readable } from 'stream';
  *                 defult: "All"
  *     responses:
  *       200:
- *         description: Emails sent successfully.
+ *         description: Email sending initiated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -63,11 +64,6 @@ import { Readable } from 'stream';
  *                 success:
  *                   type: boolean
  *                   example: true
- *                 countsByDepartment:
- *                   type: object
- *                   additionalProperties:
- *                     type: integer
- *                   description: A dictionary with department names as keys and counts as values.
  *                 mailerId:
  *                   type: string
  *                   description: The mailerId used for tracking.
@@ -126,17 +122,23 @@ export async function POST(request: NextRequest) {
             );
         }
         
-        //TODO: Validate email address
+        if (!validator.isEmail(senderEmailAddress)) {
+            return NextResponse.json(
+                { success: false, error: 'Invalid sender email address' },
+                { status: 400 }
+            );
+        }
 
-        const departments = departmentsField.split(',').map(dep => dep.trim().toLowerCase());
-
-        if (!mailerId) {
-            const mailerService = MailerService.getInstance();
+        const departments = departmentsField
+            ? departmentsField.split(',').map(dep => dep.trim().toLowerCase())
+            : ['all'];
+        
+        const mailerService = MailerService.getInstance();
+        mailerId = await mailerService.getMailerById(mailerId);
+        if (mailerId == null) {
             mailerId = await mailerService.createMailer();
         }
 
-        //TODO: Make sure that mailerId is in database (if user send in mailerId)
-        
         const htmlTemplate = await htmlContentFile.text();
 
         const csvContent = await receiverDetailsCSVFile.text();
@@ -149,42 +151,120 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const countsByDepartment = {};
+        // Start the email sending process in the background
+        sendEmailsInBackground(
+            senderEmailAddress,
+            senderEmailPassword,
+            subject,
+            htmlTemplate,
+            recipients,
+            departments,
+            mailerId
+        );
 
-        for (const recipient of recipients) {
-            if (!recipient.email || !recipient.name || !recipient.department) {
-                return NextResponse.json(
-                    { success: false, error: 'Invalid recipient data in CSV.' },
-                    { status: 400 }
-                );
-            }
-
-            const recipientDepartment = recipient.department.toLowerCase();
-            if (!departments.includes('all') && !departments.includes(recipientDepartment)) {
-                continue; // Skip this recipient
-            }
-
-            const personalizedHtmlContent = htmlTemplate
-                .replace(/{{name}}/g, recipient.name)
-                .replace(/{{department}}/g, recipient.department)
-                + `<img src="http://${process.env.MAILER_PROGRAM_IP}/api/files/${mailerId}" width="1" height="1" alt="" style="display:none;" />`;
-
-            const success = await sendMailTo(senderEmailAddress, senderEmailPassword, recipient.email, subject, personalizedHtmlContent);
-
-            // Update countsByDepartment
-            if (success) {
-                countsByDepartment[recipient.department] = (countsByDepartment[recipient.department] || 0) + 1;
-            }
-        }
-        return NextResponse.json({ success: true, countsByDepartment, mailerId});
+        // Return success message immediately
+        return NextResponse.json({ success: true, mailerId });
     } catch (error) {
-        console.error('Error sending emails:', error);
+        console.error('Error starting email sending:', error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
 
+// Background email sending function
+function sendEmailsInBackground(
+    senderEmailAddress: string,
+    senderEmailPassword: string,
+    subject: string,
+    htmlTemplate: string,
+    recipients: any[],
+    departments: string[],
+    mailerId: string
+) {
+    (async () => {
+        const emailLogService = EmailLogService.getInstance();
+        for (const recipient of recipients) {
+            try {
+
+                validateRecipient(recipient);
+
+                const recipientDepartment = recipient.department.toLowerCase();
+                if (!departments.includes('all') && !departments.includes(recipientDepartment)) {
+                    continue; // Skip this recipient
+                }
+
+                const personalizedHtmlContent = htmlTemplate
+                    .replace(/{{name}}/g, recipient.name)
+                    .replace(/{{department}}/g, recipient.department)
+                    + `<img src="http://${process.env.MAILER_PROGRAM_IP}/api/files/${mailerId}" width="1" height="1" alt="" style="display:none;" />`;
+
+                const success = await sendMailTo(
+                    senderEmailAddress,
+                    senderEmailPassword,
+                    recipient.email,
+                    subject,
+                    personalizedHtmlContent
+                );
+
+                if (success) {
+                    // Log the email sent
+                    await emailLogService.logEmailSent({
+                        mailerId,
+                        recipientEmail: recipient.email,
+                        recipientName: recipient.name,
+                        recipientDepartment: recipient.department,
+                        success: true,
+                        log_message: "Email sent successfully",
+                    });
+                } else {
+                    await emailLogService.logEmailSent({
+                        mailerId,
+                        recipientEmail: recipient.email,
+                        recipientName: recipient.name,
+                        recipientDepartment: recipient.department,
+                        success: false,
+                        log_message: "Email not sent",
+                    });
+                }
+                // Wait for 2 seconds before sending the next email
+                await sleep(2000);
+            } catch (error) {
+                await emailLogService.logEmailSent({
+                    mailerId,
+                    recipientEmail: recipient.email,
+                    recipientName: recipient.name,
+                    recipientDepartment: recipient.department,
+                    success: false,
+                    log_message: `Email not sent - ${error}`,
+                });
+                console.error('Error sending email to:', recipient.email, error);
+                // Handle individual email send errors here if necessary
+            }
+        }
+    })();
+}
+
+// Sleep function to add delay between email sends
+function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function validateRecipient(recipient: any) {
+    if (!recipient.email) {
+        throw new Error('Recipient email is missing');
+    }
+    recipient.email = recipient.email.trim().toLowerCase();
+    if (!validator.isEmail(recipient.email)) {
+        throw new Error('Recipient email address is invalid');
+    }
+}
 // Function to send the email
-export async function sendMailTo(senderEmailAddress, senderEmailPassword, receiverEmailAddress, subject, msg) {
+export async function sendMailTo(
+    senderEmailAddress: string,
+    senderEmailPassword: string,
+    receiverEmailAddress: string,
+    subject: string,
+    msg: string
+) {
     // Configure the email transporter
     const transporter = nodemailer.createTransport({
         host: process.env.SMTP_SERVER,
@@ -209,7 +289,7 @@ export async function sendMailTo(senderEmailAddress, senderEmailPassword, receiv
     return true;
 }
 
-async function parseCSV(csvContent) {
+async function parseCSV(csvContent: string) {
     const recipients = [];
     const stream = Readable.from(csvContent);
 
