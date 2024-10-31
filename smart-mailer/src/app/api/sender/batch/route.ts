@@ -134,9 +134,12 @@ export async function POST(request: NextRequest) {
       : ["all"];
 
     const mailerService = MailerService.getInstance();
-    mailerId = await mailerService.getMailerById(mailerId);
-    if (mailerId == null) {
+    const mailer = await mailerService.getMailerById(mailerId);
+
+    if (!mailer) {
       mailerId = await mailerService.createMailer();
+    } else {
+      mailerId = mailer.id;
     }
 
     const htmlTemplate = await htmlContentFile.text();
