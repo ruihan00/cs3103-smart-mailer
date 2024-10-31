@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
-import { NextRequest, NextResponse } from 'next/server';
+import nodemailer from "nodemailer";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * @swagger
@@ -73,42 +73,72 @@ import { NextRequest, NextResponse } from 'next/server';
  *                   example: "Error message"
  */
 export async function POST(request: NextRequest) {
-    try {
-        const json = await request.json();
-        // Extract required fields from the request body
-        const { senderEmailAddress, senderEmailPassword, receiverEmailAddress, subject, msg } = json;
-        // Validate required fields
-        if (!senderEmailAddress || !senderEmailPassword || !receiverEmailAddress || !subject || !msg) {
-            return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
-        }
-        await sendMailTo(senderEmailAddress, senderEmailPassword, receiverEmailAddress, subject, msg);
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error('Error sending email:', error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  try {
+    const json = await request.json();
+    // Extract required fields from the request body
+    const {
+      senderEmailAddress,
+      senderEmailPassword,
+      receiverEmailAddress,
+      subject,
+      msg,
+    } = json;
+    // Validate required fields
+    if (
+      !senderEmailAddress ||
+      !senderEmailPassword ||
+      !receiverEmailAddress ||
+      !subject ||
+      !msg
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Missing required fields" },
+        { status: 400 }
+      );
     }
+    await sendMailTo(
+      senderEmailAddress,
+      senderEmailPassword,
+      receiverEmailAddress,
+      subject,
+      msg
+    );
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
 }
 
-async function sendMailTo(senderEmailAddress, senderEmailPassword, receiverEmailAddress, subject, msg) {
-    // Configure the email transporter
-    const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_SERVER,
-        port: parseInt(process.env.SMTP_PORT, 10),
-        secure: true,
-        auth: {
-            user: senderEmailAddress,
-            pass: senderEmailPassword,
-        },
-    });
+async function sendMailTo(
+  senderEmailAddress,
+  senderEmailPassword,
+  receiverEmailAddress,
+  subject,
+  msg
+) {
+  // Configure the email transporter
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_SERVER,
+    port: parseInt(process.env.SMTP_PORT, 10),
+    secure: true,
+    auth: {
+      user: senderEmailAddress,
+      pass: senderEmailPassword,
+    },
+  });
 
-    // Define the email options
-    const mailOptions = {
-        from: senderEmailAddress,
-        to: receiverEmailAddress,
-        subject,
-        html: msg,
-    };
+  // Define the email options
+  const mailOptions = {
+    from: senderEmailAddress,
+    to: receiverEmailAddress,
+    subject,
+    html: msg,
+  };
 
-    // Send the email
-    await transporter.sendMail(mailOptions);
+  // Send the email
+  await transporter.sendMail(mailOptions);
 }
