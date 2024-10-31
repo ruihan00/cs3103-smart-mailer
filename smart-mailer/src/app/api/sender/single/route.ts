@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-export async function sendMailTo(senderEmailAddress, senderEmailPassword, receiverEmailAddress, subject, msg) {
+async function sendMailTo(senderEmailAddress, senderEmailPassword, receiverEmailAddress, subject, msg) {
     // Configure the email transporter
     const transporter = nodemailer.createTransport({
         host: process.env.SMTP_SERVER,

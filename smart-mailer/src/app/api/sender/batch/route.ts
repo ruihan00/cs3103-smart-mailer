@@ -195,7 +195,7 @@ function sendEmailsInBackground(
                 const personalizedHtmlContent = htmlTemplate
                     .replace(/{{name}}/g, recipient.name)
                     .replace(/{{department}}/g, recipient.department)
-                    + `<img src="http://${process.env.MAILER_PROGRAM_IP}/api/files/${mailerId}" width="1" height="1" alt="" style="display:none;" />`;
+                    + `<img src="${process.env.MAILER_PROGRAM_IP}/api/files/${mailerId}" width="1" height="1" alt="" style="display:none;" />`;
 
                 const success = await sendMailTo(
                     senderEmailAddress,
