@@ -1,0 +1,5 @@
+email,name,department
+e0686139@u.nus.edu,Justin,Science
+invalidEmail,Invalid,Math
+noNameProvided@gmail.com,,Math
+noDepartmentProvided@gmail.com,Justin,
