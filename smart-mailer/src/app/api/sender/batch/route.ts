@@ -9,9 +9,9 @@ import validator from "validator"; // Import the validator library
  * @swagger
  * /api/sender/batch:
  *   post:
- *     summary: Send personalized emails to multiple recipients
+ *     summary: Send personalized emails to multiple recipients, with access to email logs and detailed statistics.
  *     requestBody:
- *       description: Sends personalized emails using provided SMTP credentials, a CSV file of recipient details, and an HTML file as the email template.
+ *       description: Sends personalized emails using provided SMTP credentials, a CSV file of recipient details and an HTML file as the email template.
  *       required: true
  *       content:
  *         multipart/form-data:
@@ -35,18 +35,18 @@ import validator from "validator"; // Import the validator library
  *               receiverDetailsCSV:
  *                 type: string
  *                 format: binary
- *                 description: A CSV file containing receiver details (email, name, department).
+ *                 description: A CSV file containing recipient details (email, name, department).
  *               htmlContent:
  *                 type: string
  *                 format: binary
- *                 description: An HTML file containing the email template.
+ *                 description: An HTML file containing the email template. To use recipient name and department code given in the CSV, use {{name}} and {{department}} repectively.
  *               subject:
  *                 type: string
  *                 description: The subject of the email.
  *                 example: "Hello from Next.js"
  *               mailerId:
  *                 type: string
- *                 description: Optional mailerId for tracking. If not provided or left empty, a new one will be generated.
+ *                 description: Optional mailerId for tracking. If not provided, a new one will be generated.
  *                 default: ""
  *               departments:
  *                 type: string
@@ -109,15 +109,9 @@ export async function POST(request: NextRequest) {
 
     let mailerId = formData.get("mailerId") as string;
 
-    if (
-      !senderEmailAddress ||
-      !senderEmailPassword ||
-      !receiverDetailsCSVFile ||
-      !subject ||
-      !htmlContentFile
-    ) {
+    if (!senderEmailAddress) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: "Sender Email Address missing" },
         { status: 400 }
       );
     }
@@ -125,6 +119,34 @@ export async function POST(request: NextRequest) {
     if (!validator.isEmail(senderEmailAddress)) {
       return NextResponse.json(
         { success: false, error: "Invalid sender email address" },
+        { status: 400 }
+      );
+    }
+
+    if (!senderEmailPassword) {
+      return NextResponse.json(
+        { success: false, error: "Sender Email Password missing" },
+        { status: 400 }
+      );
+    }
+
+    if (!receiverDetailsCSVFile) {
+      return NextResponse.json(
+        { success: false, error: "Recipient Details CSV File missing" },
+        { status: 400 }
+      );
+    }
+
+    if (!subject) {
+      return NextResponse.json(
+        { success: false, error: "Email Subject missing" },
+        { status: 400 }
+      );
+    }
+    
+    if (!htmlContentFile) {
+      return NextResponse.json(
+        { success: false, error: "HTML Content missing" },
         { status: 400 }
       );
     }
@@ -198,6 +220,9 @@ function sendEmailsInBackground(
           continue; // Skip this recipient
         }
 
+        // Validate Recipient information including email address. If validation fails, error is thrown
+        validateRecipient(recipient);
+
         const personalizedHtmlContent = htmlTemplate
             .replace(/{{name}}/g, recipient.name)
             .replace(/{{department}}/g, recipient.department)
@@ -231,7 +256,7 @@ function sendEmailsInBackground(
                 log_message: "Email not sent",
             });
         }
-        // Wait for 2 seconds before sending the next email
+        // Wait for 2 seconds before sending the next email. Rate limiting
         await sleep(2000);
       } catch (error) {
         await emailLogService.logEmailSent({
@@ -242,8 +267,6 @@ function sendEmailsInBackground(
             success: false,
             log_message: `Email not sent - ${error}`,
         });
-        console.error('Error sending email to:', recipient.email, error);
-        // Handle individual email send errors here if necessary
       }
     }
   })();
@@ -262,6 +285,12 @@ function validateRecipient(recipient: any) {
   recipient.email = recipient.email.trim().toLowerCase();
   if (!validator.isEmail(recipient.email)) {
     throw new Error("Recipient email address is invalid");
+  }
+  if (!recipient.name) {
+    throw new Error("Recipient name is missing");
+  }
+  if (!recipient.department) {
+    throw new Error("Recipient department code is missing");
   }
 }
 // Function to send the email
