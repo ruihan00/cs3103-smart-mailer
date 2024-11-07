@@ -300,7 +300,7 @@ async function sendMailTo(
   receiverEmailAddress: string,
   subject: string,
   msg: string,
-  maxRetries = 3
+  maxAttempts = 3
 ) {
   // Configure the email transporter
   const transporter = nodemailer.createTransport({
@@ -322,7 +322,7 @@ async function sendMailTo(
   };
 
   let attempt = 0;
-  while (attempt < maxRetries) {
+  while (attempt < maxAttempts) {
     try {
       // Attempt to send the email
       await transporter.sendMail(mailOptions);
@@ -332,7 +332,7 @@ async function sendMailTo(
       attempt++;
       console.warn(`Attempt ${attempt} to send email to ${receiverEmailAddress} failed. Error: ${error.message}`);
       
-      if (attempt < maxRetries) {
+      if (attempt < maxAttempts) {
         // Wait with exponential backoff
         const delay = Math.pow(2, attempt) * 1000;
         console.log(`Retrying in ${delay / 1000} seconds...`);
