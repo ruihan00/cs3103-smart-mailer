@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @swagger
  * /api/sender/single:
  *   post:
- *     summary: Send an email
+ *     summary: Send an email immediately with email logs.
  *     requestBody:
  *       description: Sends an email using provided SMTP credentials.
  *       required: true

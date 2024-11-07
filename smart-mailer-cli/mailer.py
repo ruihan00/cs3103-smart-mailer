@@ -141,7 +141,7 @@ def main():
         body = prepare_email_body(body_template, recipient, mailer_id)
         success = send_email(SMTP_SERVER, SMTP_PORT, SENDER_EMAIL, SMTP_PASSWORD, recipient['email'], subject, body)
         counts_by_department[recipient['department']] += success
-        time.sleep(random.randrange(0, 10) * 0.2)  # Introduce delay to reduce spam likelihood
+        time.sleep(2)  # Introduce delay to reduce spam likelihood
 
     # Print the report
     print('Emails sent:')
