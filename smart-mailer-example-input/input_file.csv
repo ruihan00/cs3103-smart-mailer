@@ -1,5 +1,5 @@
 email,name,department
-e0686139@u.nus.edu,Justin,Science
+smart.mailer.tester00@gmail.com,John Wick,Science
 invalidEmail,Invalid,Math
 noNameProvided@gmail.com,,Math
-noDepartmentProvided@gmail.com,Justin,
+noDepartmentProvided@gmail.com,Someone,
