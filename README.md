@@ -30,7 +30,7 @@ sudo -u postgres psql -d mailer -f /path/to/cs3103-smart-mailer/init-scripts/ini
 sudo systemctl status postgresql
 ```
 
-### Step 2: Database Setup
+### Step 2: Local Development
 1. Clone this repository and navigate to the project directory.
 ```
 git clone <repository-url>

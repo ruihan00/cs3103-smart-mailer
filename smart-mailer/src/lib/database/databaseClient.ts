@@ -13,10 +13,7 @@ class DatabaseClient {
         logging: false,
         dialectModule: pg,
         dialectOptions: {
-          ssl: {
-            require: true,
-            rejectUnauthorized: false,
-          },
+          ssl: process.env.DATABASE_SSL || false,
         },
       });
     }
