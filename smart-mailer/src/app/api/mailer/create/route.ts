@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
  * @swagger
  * /api/mailer/create:
  *  get:
- *   description: Creates a new mailer and returns its unique identifier
+ *   summary: Creates a new mailerId and returns its unique identifier
  *  responses:
  *   200:
  *     description: Unique identifier for the new mailer

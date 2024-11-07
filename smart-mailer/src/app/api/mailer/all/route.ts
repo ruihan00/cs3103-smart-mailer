@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
  * @swagger
  * /api/mailer/all:
  *  get:
- *    description: Returns all mailers
+ *    summary: Returns all mailerIds
  *    responses:
  *      200:
  *        description: All mailers

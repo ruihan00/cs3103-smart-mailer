@@ -7,7 +7,7 @@ import { NextRequest } from "next/server";
  * @swagger
  * /api/clicks:
  *  get:
- *    description: Returns the click count for a mailer and the click count for the last 5 days and 5 months
+ *    summary: Returns the click count for a mailer and the click count for the last 5 days and 5 months
  *    parameters:
  *      - in: query
  *        name: mailerId

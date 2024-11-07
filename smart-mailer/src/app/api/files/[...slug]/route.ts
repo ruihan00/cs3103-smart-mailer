@@ -8,7 +8,7 @@ const transparentPixel =
  * @swagger
  * /api/files/{mailerId}:
  *   get:
- *     description: Increments mailerId visit count by 1 and returns a 1x1 pixel transparent image
+ *     summary: Increments mailerId visit count by 1 and returns a 1x1 pixel transparent image
  *     parameters:
  *           - in: path
  *             name: mailerId
