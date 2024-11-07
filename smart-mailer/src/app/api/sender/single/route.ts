@@ -118,7 +118,8 @@ async function sendMailTo(
   senderEmailPassword,
   receiverEmailAddress,
   subject,
-  msg
+  msg,
+  maxRetries = 3
 ) {
   // Configure the email transporter
   const transporter = nodemailer.createTransport({
@@ -139,6 +140,31 @@ async function sendMailTo(
     html: msg,
   };
 
-  // Send the email
-  await transporter.sendMail(mailOptions);
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      // Attempt to send the email
+      await transporter.sendMail(mailOptions);
+      console.log(`Email sent successfully to ${receiverEmailAddress} on attempt ${attempt + 1}`);
+      return true; // Return true if successful
+    } catch (error) {
+      attempt++;
+      console.warn(`Attempt ${attempt} to send email to ${receiverEmailAddress} failed. Error: ${error.message}`);
+      
+      if (attempt < maxRetries) {
+        // Wait with exponential backoff
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`Retrying in ${delay / 1000} seconds...`);
+        await sleep(delay);
+      } else {
+        console.error(`Max retries reached. Failed to send email to ${receiverEmailAddress}`);
+        return false; // Return false after max retries
+      }
+    }
+  }
 }
+
+// Sleep function to add delay between email sends
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
